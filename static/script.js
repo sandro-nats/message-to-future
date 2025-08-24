@@ -1,4 +1,5 @@
-const API_BASE = "https://your-render-app.onrender.com"; // empty string works for both local and production
+const API_BASE = "https://message-to-future.onrender.com";
+
 
 const form = document.getElementById("messageForm");
 const statusDiv = document.getElementById("status");
