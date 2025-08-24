@@ -1,20 +1,23 @@
-import threading
-import time
-from datetime import datetime
 from models import FutureMessage
 from app import db
+import datetime
+import threading
+import time
 
 def check_messages():
     while True:
-        now = datetime.utcnow().date()
-        messages = FutureMessage.query.filter_by(sent=False, delivery_date=now).all()
+        today = datetime.date.today()
+        messages = FutureMessage.query.filter_by(sent=False).all()
         for msg in messages:
-            print(f"[scheduler] Sending message to {msg.email}: {msg.subject}")
-            msg.sent = True
-            db.session.commit()
-        time.sleep(60)  # check every minute
+            if msg.delivery_date <= today:
+                print(f"Sending message to {msg.email}: {msg.subject}")
+                # Here you would integrate actual email sending
+                msg.sent = True
+                db.session.commit()
+        time.sleep(60)  # Check every minute
 
 def start_scheduler():
-    thread = threading.Thread(target=check_messages, daemon=True)
+    thread = threading.Thread(target=check_messages)
+    thread.daemon = True  # So it stops when the app stops
     thread.start()
-    print("[scheduler] Email scheduler started.")
+    print("Scheduler started")

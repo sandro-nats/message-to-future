@@ -1,42 +1,23 @@
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-from scheduler import start_scheduler
 import os
 
-app = Flask(__name__, static_folder='static', static_url_path='/')
+app = Flask(__name__)
 CORS(app)
 
-# Database
+# Database configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/messages.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Initialize database
 db = SQLAlchemy(app)
 
-from models import FutureMessage
-
-# Serve frontend
-@app.route('/')
-def serve_index():
-    return send_from_directory(app.static_folder, 'index.html')
-
-# API route to send message
-@app.route('/api/send-message', methods=['POST'])
-def send_message():
-    data = request.get_json()
-    if not data or 'email' not in data or 'subject' not in data or 'message' not in data or 'delivery_date' not in data:
-        return jsonify({"error": "Missing data"}), 400
-
-    new_message = FutureMessage(
-        email=data['email'],
-        subject=data['subject'],
-        message=data['message'],
-        delivery_date=data['delivery_date']
-    )
-    db.session.add(new_message)
-    db.session.commit()
-    return jsonify({"success": True})
+# Import routes at the bottom to avoid circular imports
+from routes import *
 
 if __name__ == "__main__":
-    os.makedirs('instance', exist_ok=True)
-    db.create_all()
-    start_scheduler()
+    from scheduler import start_scheduler
+    start_scheduler()  # Start scheduler
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
