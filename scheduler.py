@@ -1,22 +1,22 @@
-from threading import Thread
-from datetime import date
+import threading
 import time
-from app import app, db
-from models import FutureMessage
+from datetime import date
+from app import app, db, FutureMessage
+from email_utils import send_email
 
 def send_due_messages():
-    while True:
-        today = date.today()
-        with app.app_context():  # Ensures DB queries have application context
+    with app.app_context():  # ✅ fixes application context issue
+        while True:
+            today = date.today()
             messages = FutureMessage.query.filter_by(delivery_date=today, sent=False).all()
+            
             for msg in messages:
-                # Here you would normally send the email
-                print(f"Sending message to {msg.email}: {msg.subject}")
+                send_email(msg.email, msg.subject, msg.message)
                 msg.sent = True
                 db.session.commit()
-        time.sleep(86400)  # Check once a day
+            
+            time.sleep(60)  # check once per minute
 
 def start_scheduler():
-    thread = Thread(target=send_due_messages)
-    thread.daemon = True
-    thread.start()
+    t = threading.Thread(target=send_due_messages, daemon=True)
+    t.start()

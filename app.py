@@ -2,6 +2,10 @@ from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 import os
+from scheduler import start_scheduler
+
+start_scheduler()
+
 
 app = Flask(__name__)
 CORS(app)
