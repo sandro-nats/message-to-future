@@ -14,7 +14,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
 # Import routes at the bottom to avoid circular imports
-from routes import *
+# If you have separate route files, you can import them here
+# Example: from routes import *
 
 if __name__ == "__main__":
     from scheduler import start_scheduler
