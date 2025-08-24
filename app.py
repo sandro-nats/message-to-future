@@ -1,80 +1,42 @@
-from datetime import datetime
-import os
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory
+from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-from models import db, FutureMessage
 from scheduler import start_scheduler
+import os
 
-# --- Flask setup ---
-app = Flask(__name__, static_folder="static")
+app = Flask(__name__, static_folder='static', static_url_path='/')
 CORS(app)
 
-# SQLite database
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///messages.db"
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+# Database
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///instance/messages.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
 
-db.init_app(app)
+from models import FutureMessage
 
-# --- Serve frontend ---
-@app.get("/")
-def serve_frontend():
-    return send_from_directory(app.static_folder, "index.html")
+# Serve frontend
+@app.route('/')
+def serve_index():
+    return send_from_directory(app.static_folder, 'index.html')
 
-# Serve static files like CSS/JS automatically
-@app.get("/<path:path>")
-def serve_static(path):
-    return send_from_directory(app.static_folder, path)
-
-# --- API routes ---
-@app.post("/api/send-message")
+# API route to send message
+@app.route('/api/send-message', methods=['POST'])
 def send_message():
-    try:
-        payload = request.form if request.form else (request.get_json(silent=True) or {})
-        email = (payload.get("email") or "").strip()
-        subject = (payload.get("subject") or "").strip()
-        message = (payload.get("message") or "").strip()
-        delivery_date_str = (payload.get("delivery_date") or "").strip()
+    data = request.get_json()
+    if not data or 'email' not in data or 'subject' not in data or 'message' not in data or 'delivery_date' not in data:
+        return jsonify({"error": "Missing data"}), 400
 
-        if not (email and subject and message and delivery_date_str):
-            return jsonify({"error": "All fields are required."}), 400
+    new_message = FutureMessage(
+        email=data['email'],
+        subject=data['subject'],
+        message=data['message'],
+        delivery_date=data['delivery_date']
+    )
+    db.session.add(new_message)
+    db.session.commit()
+    return jsonify({"success": True})
 
-        try:
-            delivery_date = datetime.strptime(delivery_date_str, "%Y-%m-%d").date()
-        except ValueError:
-            return jsonify({"error": "delivery_date must be in YYYY-MM-DD format."}), 400
-
-        new_msg = FutureMessage(
-            email=email,
-            subject=subject,
-            message=message,
-            delivery_date=delivery_date
-        )
-        db.session.add(new_msg)
-        db.session.commit()
-
-        return jsonify({"message": "Message scheduled successfully!"}), 201
-
-    except Exception as e:
-        print("ERROR in /api/send-message:", e)
-        return jsonify({"error": "Internal server error."}), 500
-
-@app.get("/api/messages")
-def list_messages():
-    items = FutureMessage.query.order_by(FutureMessage.id.desc()).all()
-    return jsonify([
-        {
-            "id": m.id,
-            "email": m.email,
-            "subject": m.subject,
-            "message": m.message,
-            "delivery_date": m.delivery_date.isoformat(),
-            "sent": m.sent
-        } for m in items
-    ])
-
-# --- Start app ---
 if __name__ == "__main__":
-    with app.app_context():
-        db.create_all()
-    start_scheduler(app)
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+    os.makedirs('instance', exist_ok=True)
+    db.create_all()
+    start_scheduler()

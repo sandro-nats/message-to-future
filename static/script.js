@@ -1,37 +1,37 @@
-// Relative API path (same server)
-const API_BASE = "";
+const API_BASE = ""; // empty string works for both local and production
 
-// Set min date to today
-(function setMinDate() {
-  const d = new Date();
-  d.setHours(0,0,0,0);
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2,"0");
-  const dd = String(d.getDate()).padStart(2,"0");
-  document.getElementById("dateInput").setAttribute("min", `${yyyy}-${mm}-${dd}`);
-})();
+const form = document.getElementById("messageForm");
+const statusDiv = document.getElementById("status");
 
-document.getElementById("futureForm").addEventListener("submit", async function(e){
-  e.preventDefault();
-  const resEl = document.getElementById("response");
-  const submitBtn = document.getElementById("submitBtn");
-  resEl.textContent = "";
-  submitBtn.disabled = true;
+form.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-  const formData = new FormData(this);
+    const data = {
+        email: form.email.value,
+        subject: form.subject.value,
+        message: form.message.value,
+        delivery_date: form.delivery_date.value
+    };
 
-  try {
-    const res = await fetch(`${API_BASE}/api/send-message`, {
-      method: "POST",
-      body: formData
-    });
-    const data = await res.json();
-    if(!res.ok) throw new Error(data.error || "Failed to schedule message.");
-    resEl.textContent = data.message || "Scheduled!";
-    this.reset();
-  } catch(err){
-    resEl.textContent = "Error: " + err.message;
-  } finally {
-    submitBtn.disabled = false;
-  }
+    try {
+        const res = await fetch(`${API_BASE}/api/send-message`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data)
+        });
+
+        const result = await res.json();
+        if (result.success) {
+            statusDiv.textContent = "Message scheduled successfully!";
+            statusDiv.style.color = "green";
+            form.reset();
+        } else {
+            statusDiv.textContent = "Error: " + (result.error || "Unknown error");
+            statusDiv.style.color = "red";
+        }
+    } catch (err) {
+        statusDiv.textContent = "Network error!";
+        statusDiv.style.color = "red";
+        console.error(err);
+    }
 });

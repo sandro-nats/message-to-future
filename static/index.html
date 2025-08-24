@@ -1,42 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Message to the Future</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Message to the Future</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <main class="card">
     <h1>Message to the Future</h1>
-
-    <form id="futureForm" autocomplete="on">
-      <label>
-        Your Email
-        <input type="email" name="email" placeholder="you@example.com" required />
-      </label>
-
-      <label>
-        Subject
-        <input type="text" name="subject" placeholder="Subject" required />
-      </label>
-
-      <label>
-        Message
-        <textarea name="message" placeholder="Write your message..." rows="6" required></textarea>
-      </label>
-
-      <label>
-        Delivery Date
-        <input id="dateInput" type="date" name="delivery_date" required />
-      </label>
-
-      <button type="submit" id="submitBtn">Schedule Message</button>
+    <form id="messageForm">
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="text" name="subject" placeholder="Subject" required>
+        <textarea name="message" placeholder="Your message" required></textarea>
+        <input type="date" name="delivery_date" required>
+        <button type="submit">Send</button>
     </form>
-
-    <p id="response" class="response"></p>
-  </main>
-
-  <script src="script.js"></script>
+    <div id="status"></div>
+    <script src="script.js"></script>
 </body>
 </html>
